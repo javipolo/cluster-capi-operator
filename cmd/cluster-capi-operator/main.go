@@ -21,6 +21,7 @@ import (
 	"time"
 
 	metal3v1 "github.com/metal3-io/cluster-api-provider-metal3/api/v1beta1"
+	ociv1 "github.com/oracle/cluster-api-provider-oci/api/v1beta2"
 	"github.com/spf13/pflag"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -286,6 +287,16 @@ func setupPlatformReconcilers(mgr manager.Manager, infra *configv1.Infrastructur
 	case configv1.OpenStackPlatformType:
 		setupReconcilers(mgr, infra, platform, &openstackv1.OpenStackCluster{}, containerImages, applyClient, apiextensionsClient, managedNamespace)
 		setupWebhooks(mgr)
+	case configv1.ExternalPlatformType:
+		externalPlatformName, err := util.GetExternalPlatformName(infra)
+		if err != nil {
+			klog.Error(err, "unable to get external platform name")
+			os.Exit(1)
+		}
+		if externalPlatformName == "oci" {
+			setupReconcilers(mgr, infra, platform, &ociv1.OCICluster{}, containerImages, applyClient, apiextensionsClient, managedNamespace)
+			setupWebhooks(mgr)
+		}
 	case configv1.BareMetalPlatformType:
 		setupReconcilers(mgr, infra, platform, &metal3v1.Metal3Cluster{}, containerImages, applyClient, apiextensionsClient, managedNamespace)
 		setupWebhooks(mgr)
